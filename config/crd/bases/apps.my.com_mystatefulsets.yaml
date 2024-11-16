@@ -1,0 +1,153 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: mystatefulsets.apps.my.com
+spec:
+  group: apps.my.com
+  names:
+    kind: MyStatefulSet
+    listKind: MyStatefulSetList
+    plural: mystatefulsets
+    singular: mystatefulset
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                replicas:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  description: "期望的副本数量"
+                selector:
+                  type: object
+                  description: "标签选择器，用于选择管理的 Pod"
+                template:
+                  type: object
+                  description: "Pod 的模板"
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                          additionalProperties:
+                            type: string
+                        annotations:
+                          type: object
+                          additionalProperties:
+                            type: string
+                    spec:
+                      type: object
+                      properties:
+                        containers:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              image:
+                                type: string
+                              ports:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    containerPort:
+                                      type: integer
+                        # 其他 Pod 规范字段可以在这里添加
+                volumeClaimTemplates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                      spec:
+                        type: object
+                        properties:
+                          accessModes:
+                            type: array
+                            items:
+                              type: string
+                          resources:
+                            type: object
+                            properties:
+                              requests:
+                                type: object
+                                properties:
+                                  storage:
+                                    type: string
+                        # 其他 PVC 规范字段可以在这里添加
+                serviceName:
+                  type: string
+                  description: "用于管理 Pod 的服务名称"
+                podManagementPolicy:
+                  type: string
+                  description: "控制 Pod 的管理策略"
+                updateStrategy:
+                  type: object
+                  description: "控制 StatefulSet 的更新策略"
+                revisionHistoryLimit:
+                  type: integer
+                  format: int32
+                  description: "保留的历史修订版本的数量"
+            status:
+              type: object
+              properties:
+                observedGeneration:
+                  type: integer
+                  format: int64
+                  description: "观察到的最新生成"
+                replicas:
+                  type: integer
+                  format: int32
+                  description: "当前的副本数量"
+                readyReplicas:
+                  type: integer
+                  format: int32
+                  description: "当前就绪的副本数量"
+                currentReplicas:
+                  type: integer
+                  format: int32
+                  description: "当前版本的副本数量"
+                updatedReplicas:
+                  type: integer
+                  format: int32
+                  description: "更新后的副本数量"
+                currentRevision:
+                  type: string
+                  description: "当前版本的修订"
+                updateRevision:
+                  type: string
+                  description: "更新后的版本修订"
+                collisionCount:
+                  type: integer
+                  format: int32
+                  description: "检测到的版本冲突次数"
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Replicas
+          type: integer
+          description: "Number of replicas"
+          jsonPath: .spec.replicas
+        - name: Ready Replicas
+          type: integer
+          description: "Number of ready replicas"
+          jsonPath: .status.readyReplicas
+        - name: Current Revision
+          type: string
+          description: "Current revision"
+          jsonPath: .status.currentRevision
